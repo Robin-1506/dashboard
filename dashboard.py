@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Charger les données
-file_path = "C:/Users/Utilisateur/OneDrive - Epitech/Rush 2/rapport_pharmacie.xlsx"
+file_path = "rapport_pharmacie.xlsx"
 stats_df = pd.read_excel(file_path, sheet_name="Statistiques descriptives", engine="openpyxl")
 monthly_df = pd.read_excel(file_path, sheet_name="Synthèse mensuelle", engine="openpyxl")
 
