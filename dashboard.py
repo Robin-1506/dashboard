@@ -4,51 +4,60 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Charger les données
-file_path = "rapport_pharmacie.xlsx"
-stats_df = pd.read_excel(file_path, sheet_name="Statistiques descriptives", engine="openpyxl", skiprows=1)
+file_path = "C:/Users/Utilisateur/OneDrive - Epitech/Rush 2/rapport_pharmacie.xlsx"
+stats_df = pd.read_excel(file_path, sheet_name="Statistiques descriptives", engine="openpyxl")
 monthly_df = pd.read_excel(file_path, sheet_name="Synthèse mensuelle", engine="openpyxl")
 
-# Titre
+# Ajouter une colonne avec les noms de mois en français
+mois_fr = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+           'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+monthly_df["NomMois"] = monthly_df["Month"].apply(lambda x: mois_fr[x - 1])
+
+# Titre principal
 st.title("📊 Dashboard des ventes de médicaments - Pharmacie")
 
-# Section 1 : Statistiques descriptives
-st.header("🔍 Statistiques descriptives")
-st.dataframe(stats_df.set_index(stats_df.columns[0]))
+# Onglets pour une interface responsive
+tab1, tab2 = st.tabs(["📊 Statistiques & Synthèse", "📈 Évolution & Recherche"])
 
-# Section 2 : Évolution mensuelle
-st.header("📈 Évolution mensuelle des ventes")
-selected_product = st.selectbox("Choisissez un médicament", monthly_df.columns[2:])
-monthly_df["Date"] = pd.to_datetime(monthly_df[["Year", "Month"]].assign(DAY=1))
-fig, ax = plt.subplots()
-sns.lineplot(data=monthly_df, x="Date", y=selected_product, ax=ax)
-ax.set_title(f"Évolution des ventes - {selected_product}")
-ax.set_xlabel("Date")
-ax.set_ylabel("Ventes")
-st.pyplot(fig)
+# 👉 Onglet 1 : Statistiques descriptives + Synthèse générale
+with tab1:
+    st.header("🔍 Statistiques descriptives")
+    st.markdown("**Tableau des statistiques descriptives**")
+    st.dataframe(stats_df, use_container_width=True)
 
-# Section 3 : Recherche par produit et date
-st.header("🔎 Recherche ciblée")
-selected_year = st.selectbox("Année", sorted(monthly_df["Year"].unique()))
-selected_month = st.selectbox("Mois", sorted(monthly_df["Month"].unique()))
-selected_product_2 = st.selectbox("Produit", monthly_df.columns[2:])
-filtered_value = monthly_df[
-    (monthly_df["Year"] == selected_year) & 
-    (monthly_df["Month"] == selected_month)
-][selected_product_2].values
-if filtered_value.size > 0:
-    st.success(f"Ventes de {selected_product_2} en {selected_month}/{selected_year} : {filtered_value[0]}")
-else:
-    st.warning("Aucune donnée disponible pour cette sélection.")
+    st.header("📊 Synthèse des ventes totales")
+    numeric_cols = monthly_df.select_dtypes(include='number').columns[2:]
+    total_sales = monthly_df[numeric_cols].sum()
+    fig2, ax2 = plt.subplots()
+    sns.barplot(x=total_sales.index, y=total_sales.values, ax=ax2)
+    ax2.set_title("Ventes totales par type de médicament")
+    ax2.set_xlabel("Type de médicament")
+    ax2.set_ylabel("Ventes totales")
+    plt.xticks(rotation=45)
+    st.pyplot(fig2, use_container_width=True)
 
-# Section 4 : Synthèse générale
-st.header("📊 Synthèse des ventes totales")
-# Exclure les colonnes non numériques
-numeric_cols = monthly_df.select_dtypes(include='number').columns[2:]
-total_sales = monthly_df[numeric_cols].sum()
-fig2, ax2 = plt.subplots()
-sns.barplot(x=total_sales.index, y=total_sales.values, ax=ax2)
-ax2.set_title("Ventes totales par type de médicament")
-ax2.set_xlabel("Type de médicament")
-ax2.set_ylabel("Ventes totales")
-plt.xticks(rotation=45)
-st.pyplot(fig2)
+# 👉 Onglet 2 : Évolution mensuelle + Recherche ciblée
+with tab2:
+    st.header("📈 Évolution mensuelle des ventes")
+    selected_product = st.selectbox("Choisissez un médicament", monthly_df.columns[2:])
+    monthly_df["Date"] = pd.to_datetime(monthly_df[["Year", "Month"]].assign(DAY=1))
+    fig, ax = plt.subplots()
+    sns.lineplot(data=monthly_df, x="Date", y=selected_product, ax=ax)
+    ax.set_title(f"Évolution des ventes - {selected_product}")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Ventes")
+    st.pyplot(fig, use_container_width=True)
+
+    st.header("🔎 Recherche ciblée")
+    selected_year = st.selectbox("Année", sorted(monthly_df["Year"].unique()))
+    selected_month_name = st.selectbox("Mois", mois_fr)
+    selected_month = mois_fr.index(selected_month_name) + 1
+    selected_product_2 = st.selectbox("Produit", monthly_df.columns[2:])
+    filtered_value = monthly_df[
+        (monthly_df["Year"] == selected_year) &
+        (monthly_df["Month"] == selected_month)
+    ][selected_product_2].values
+    if filtered_value.size > 0:
+        st.success(f"Ventes de {selected_product_2} en {selected_month_name} {selected_year} : {filtered_value[0]}")
+    else:
+        st.warning("Aucune donnée disponible pour cette sélection.")
